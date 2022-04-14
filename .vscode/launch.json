@@ -6,7 +6,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${fileDirname}/${fileBasenameNoExtension}",
-        "args": ["qbittorrent"],
+        "args": ["pipewire"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "environment": [],
