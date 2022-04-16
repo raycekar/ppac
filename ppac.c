@@ -4,17 +4,6 @@
 
 #include "Utils.h"
 
-// Needs to be changed otherwise mem leak
-const char *combineStrings(const char *first, const char *second)
-{
-   char *temp = (char *)malloc(strlen(first) + strlen(second) + 1);
-   memcpy(temp, first, strlen(first));
-   memcpy(temp + strlen(first), second, strlen(second) + 1);
-   return temp;
-}
-
-
-
 int main(int argc, char *argv[])
 {
    if (argc != 2)
@@ -24,13 +13,15 @@ int main(int argc, char *argv[])
    }
    Package *head = NULL;
    head = (Package *)malloc(sizeof(Package));
+   head->pkg = (char*)malloc(sizeof(argv[1]));
    strcpy(head->pkg, argv[1]);
    head->asdep = FALSE;
    head->next = NULL;
-   if (isPackageInstalled(argv[1]) == 1)
-   {
-      getPackageDependencies(argv[1], head);
-   }
+   getDependsOn(argv[1]);
+   // if (isPackageInstalled(argv[1]) == 1)
+   // {
+   //    getPackageDependencies(argv[1], head);
+   // }
 
    printf("%d", isPackageInstalled(argv[1]));
 
