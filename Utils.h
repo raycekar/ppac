@@ -6,13 +6,15 @@
 
 // Package Helper
 #define PHSI "yay -Si "
+#define PHSL "yay -Sl "
 #define PHQI "yay -Qi "
 #define PHQ "yay -Q "
-#define PHSYY "yay -Syy "
+#define PHSY "yay -Sy "
 
 #define GREP " | grep -A 100 --no-group-separator "
 
 // Defined Pacman Output
+#define NAME "Name"
 #define VER "Version"
 #define DEPSON "Depends On"
 #define DEPSONQ "\"Depends On\""
@@ -24,6 +26,7 @@
 #define OPTFORQ "\"Optional For\""
 #define INSTALLREASON "Install Reason"
 #define INSTALLREASONQ "\"Install Reason\""
+#define INSTALLSCRIPT "Install Script"
 
 const int TB = 10;
 
@@ -35,10 +38,15 @@ typedef struct Package
 } Package;
 
 Package *createPackage(char *pkg, bool asdep);
+void destroyPackage(Package *pak);
+char *getCorrectPackageName(char *pkg);
 Package *getDependsOn(char *pkg);
+Package *getOptionalDepsInstalled(char *pkg);
 void getPackageDependencies(char *pkg, Package *pkgListHead);
+bool isOutdated(char *pkg);
 bool isPackageExplicit(char *pkg);
 bool isPackageInstalled(char *pkg);
 bool isValidPackage(char *str);
 char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, char *pttrnExclude);
 char *trimString(char *str);
+void updateDatabase();

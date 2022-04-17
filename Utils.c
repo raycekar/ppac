@@ -4,19 +4,124 @@
 
 #include "Utils.h"
 
-Package *createPackage(char *pkg, bool asdep){
+Package *createPackage(char *pkg, bool asdep)
+{
     Package *pak = (Package *)malloc(sizeof(Package));
+    pkg = getCorrectPackageName(pkg);
+    pak->pkg = (char *)malloc(sizeof(pkg) + 1);
     strcpy(pak->pkg, pkg);
     pak->asdep = asdep;
     pak->next = NULL;
     return pak;
 }
 
+void destroyPackage(Package *pak)
+{
+    free(pak->pkg);
+    free(pak);
+}
+
+char *getCorrectPackageName(char *pkg)
+{
+    if (isPackageInstalled(pkg))
+    {
+        return trimString(pacmanOutputHelper(PHQI, pkg, NAME, NAME, VER));
+    }
+    return pkg;
+}
+
 Package *getDependsOn(char *pkg)
 {
-    char *doStr = pacmanOutputHelper(PHQI, pkg, DEPSONQ, DEPSON, OPTDEPS);
-    strtok(doStr," ");
-    return createPackage(pkg, TRUE);
+    char *dpon = pacmanOutputHelper(PHQI, pkg, DEPSONQ, DEPSON, OPTDEPS);
+    char *tok = strtok(dpon, " ");
+    Package *head = NULL;
+    Package *tail = NULL;
+    while (tok != NULL)
+    {
+        bool skip = FALSE;
+        trimString(tok);
+        if (!(isPackageInstalled(tok)) || !(isOutdated(tok)))
+        {
+            skip = TRUE;
+        }
+
+        if (!skip && head == NULL)
+        {
+            head = createPackage(tok, !(isPackageExplicit(tok)));
+            tail = head;
+        }
+        else if (!skip)
+        {
+            tail->next = createPackage(tok, !(isPackageExplicit(tok)));
+            tail = tail->next;
+        }
+        tok = strtok(NULL, " ");
+    }
+    free(dpon);
+    return head;
+}
+
+Package *getOptionalDepsInstalled(char *pkg)
+{
+    char *optDeps = pacmanOutputHelper(PHQI, pkg, OPTDEPSQ, OPTDEPS, REQBY);
+    char *tok = strtok(optDeps, "\n");
+    Package *head = NULL;
+    Package *tail = NULL;
+    char installedKey[] = "[installed]";
+    do
+    {
+        bool skip = FALSE;
+        trimString(tok);
+        if (strstr(tok, installedKey) != NULL)
+        {
+            strstr(tok, ":")[0] = '\n';
+            if (!(isPackageInstalled(tok)) || !(isOutdated(tok)))
+            {
+                skip = TRUE;
+            }
+
+            if (!skip && head == NULL)
+            {
+                head = createPackage(tok, !(isPackageExplicit(tok)));
+                tail = head;
+            }
+            else if (!skip)
+            {
+                tail->next = createPackage(tok, !(isPackageExplicit(tok)));
+                tail = tail->next;
+            }
+        }
+        tok = strtok(NULL, "\n");
+    } while (tok != NULL);
+    free(optDeps);
+    return head;
+}
+
+bool isOutdated(char *pkg)
+{
+    char *local_pkg = pkg;
+    char dx[] = "Description";
+    char *databaseV = pacmanOutputHelper(PHSI, local_pkg, VER, VER, dx);
+    if (databaseV == NULL)
+    {
+        local_pkg = getCorrectPackageName(local_pkg);
+        databaseV = pacmanOutputHelper(PHSI, local_pkg, VER, VER, dx);
+    }
+    char *localV = pacmanOutputHelper(PHQI, local_pkg, VER, VER, dx);
+    if (pkg != local_pkg)
+    {
+        free(local_pkg);
+    }
+    trimString(databaseV);
+    trimString(localV);
+    int result = strcmp(localV, databaseV);
+    free(databaseV);
+    free(localV);
+    if (result == 0)
+    {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 // void getPackageDependencies(char *pkg, Package *pkgListHead)
@@ -86,18 +191,10 @@ bool isPackageExplicit(char *pkg)
     {
         return FALSE;
     }
-    char ir[] = "\"Install Reason\"";
-    char cmd[strlen(PHQI) + strlen(pkg) + strlen(GREP) + strlen(ir) + TB];
-    strcpy(cmd, PHQI);
-    strcat(cmd, pkg);
-    strcat(cmd, GREP);
-    strcat(cmd, ir);
-    char output[BUFFERSIZE] = "";
-    FILE *p;
-    p = popen(cmd, "r");
-    fgets(output, BUFFERSIZE, p);
-    pclose(p);
-    if (strstr(output, "Explicitly installed") != NULL)
+    char *expStr = pacmanOutputHelper(PHQI, pkg, INSTALLREASONQ, INSTALLREASON, INSTALLSCRIPT);
+    char *result = strstr(expStr, "Explicitly installed");
+    free(expStr);
+    if (result != NULL)
     {
         return TRUE;
     }
@@ -112,7 +209,7 @@ bool isPackageInstalled(char *pkg)
     char output[BUFFERSIZE] = "";
     FILE *p;
     p = popen(cmd, "r");
-    fgets(output, 100, p);
+    fgets(output, BUFFERSIZE, p);
     pclose(p);
     if (strstr(output, pkg) != NULL)
     {
@@ -150,21 +247,25 @@ bool isValidPackage(char *str)
     return TRUE;
 }
 
-char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, char *pttrnExclude){
-    char cmd[strlen(ph) + strlen(pkg) + strlen(GREP) + strlen(patternQ) + TB];
+char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, char *pttrnExclude)
+{
+    char redirect[] = " 2>/dev/null";
+    char cmd[strlen(ph) + strlen(pkg) + strlen(GREP) + strlen(patternQ) + strlen(redirect) + TB];
     strcpy(cmd, ph);
     strcat(cmd, pkg);
     strcat(cmd, GREP);
     strcat(cmd, patternQ);
-    char *cmdd = cmd;
+    strcat(cmd, redirect);
+    // char *cmdd = cmd;
     char concated[BUFFERSIZE] = "";
     char tmp[BUFFERSIZE] = "";
     FILE *p;
     p = popen(cmd, "r");
     char *pout = fgets(tmp, BUFFERSIZE, p);
-    while(pout != NULL)
-    {  
-        if(strstr(tmp, pttrnExclude) != NULL){
+    while (pout != NULL)
+    {
+        if (strstr(tmp, pttrnExclude) != NULL)
+        {
             break;
         }
         strcat(concated, tmp);
@@ -175,8 +276,9 @@ char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, cha
     {
         return NULL;
     }
-    strcpy(concated, strstr(concated, ":") + 1);
-    char *output = (char *)malloc(strlen(concated));
+    char *colLoc = strstr(concated, ":") + 1;
+    memmove(concated, colLoc, strlen(colLoc));
+    char *output = (char *)malloc(strlen(concated) + 1);
     strcpy(output, concated);
     return output;
 }
@@ -208,7 +310,7 @@ char *trimString(char *str)
             }
         }
     }
-    memmove(str, pstr, strlen(pstr));
+    memmove(str, pstr, strlen(pstr) + 1);
     bool btrimmed = FALSE;
     for (i = strlen(str) - 1; i >= 0; i--)
     {
@@ -234,7 +336,5 @@ char *trimString(char *str)
 
 void updateDatabase()
 {
-    FILE *p;
-    p = popen(PHSYY, "r");
-    pclose(p);
+    system(PHSY);
 }
