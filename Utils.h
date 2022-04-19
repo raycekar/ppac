@@ -27,6 +27,7 @@
 #define INSTALLREASON "Install Reason"
 #define INSTALLREASONQ "\"Install Reason\""
 #define INSTALLSCRIPT "Install Script"
+#define CONFLICTSWITH "Conflicts With"
 
 const int TB = 10;
 
@@ -42,6 +43,8 @@ void destroyPackage(Package *pak);
 char *getCorrectPackageName(char *pkg);
 Package *getDependsOn(char *pkg);
 Package *getOptionalDepsInstalled(char *pkg);
+Package *getRequiredBy(char *pkg);
+Package *getOptionalFor(char *pkg);
 void getPackageDependencies(char *pkg, Package *pkgListHead);
 bool isOutdated(char *pkg);
 bool isPackageExplicit(char *pkg);

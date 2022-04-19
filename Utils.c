@@ -4,6 +4,8 @@
 
 #include "Utils.h"
 
+Package *getHelper(char *PH, char *pkg, char *patternQ, char *pattern, char *pttrnExclude);
+
 Package *createPackage(char *pkg, bool asdep)
 {
     Package *pak = (Package *)malloc(sizeof(Package));
@@ -32,7 +34,57 @@ char *getCorrectPackageName(char *pkg)
 
 Package *getDependsOn(char *pkg)
 {
-    char *dpon = pacmanOutputHelper(PHQI, pkg, DEPSONQ, DEPSON, OPTDEPS);
+    Package *head = getHelper(PHQI, pkg, DEPSONQ, DEPSON, OPTDEPS);
+    return head;
+}
+
+Package *getOptionalDepsInstalled(char *pkg)
+{
+    char *optDeps = pacmanOutputHelper(PHQI, pkg, OPTDEPSQ, OPTDEPS, REQBY);
+    char *tok = strtok(optDeps, "\n");
+    Package *head = NULL;
+    Package *tail = NULL;
+    char installedKey[] = "[installed]";
+    while (tok != NULL)
+    {
+        bool skip = FALSE;
+        trimString(tok);
+        if (strstr(tok, installedKey) != NULL)
+        {
+            strstr(tok, ":")[0] = '\0';
+            if (!(isPackageInstalled(tok)) || !(isOutdated(tok)))
+            {
+                skip = TRUE;
+            }
+
+            if (!skip && head == NULL)
+            {
+                head = createPackage(tok, !(isPackageExplicit(tok)));
+                tail = head;
+            }
+            else if (!skip)
+            {
+                tail->next = createPackage(tok, !(isPackageExplicit(tok)));
+                tail = tail->next;
+            }
+        }
+        tok = strtok(NULL, "\n");
+    }
+    free(optDeps);
+    return head;
+}
+
+Package *getOptionalFor(char *pkg){
+    Package *head = getHelper(PHQI, pkg, OPTFORQ, OPTFOR, CONFLICTSWITH);
+    return head;
+}
+
+Package *getRequiredBy(char *pkg){
+    Package *head = getHelper(PHQI, pkg, REQBYQ, REQBY, OPTFOR);
+    return head;
+}
+Package *getHelper(char *PH, char *pkg, char *patternQ, char *pattern, char *pttrnExclude){
+    char *dpon = pacmanOutputHelper(PH, pkg, patternQ, pattern, pttrnExclude);
     char *tok = strtok(dpon, " ");
     Package *head = NULL;
     Package *tail = NULL;
@@ -58,42 +110,6 @@ Package *getDependsOn(char *pkg)
         tok = strtok(NULL, " ");
     }
     free(dpon);
-    return head;
-}
-
-Package *getOptionalDepsInstalled(char *pkg)
-{
-    char *optDeps = pacmanOutputHelper(PHQI, pkg, OPTDEPSQ, OPTDEPS, REQBY);
-    char *tok = strtok(optDeps, "\n");
-    Package *head = NULL;
-    Package *tail = NULL;
-    char installedKey[] = "[installed]";
-    do
-    {
-        bool skip = FALSE;
-        trimString(tok);
-        if (strstr(tok, installedKey) != NULL)
-        {
-            strstr(tok, ":")[0] = '\n';
-            if (!(isPackageInstalled(tok)) || !(isOutdated(tok)))
-            {
-                skip = TRUE;
-            }
-
-            if (!skip && head == NULL)
-            {
-                head = createPackage(tok, !(isPackageExplicit(tok)));
-                tail = head;
-            }
-            else if (!skip)
-            {
-                tail->next = createPackage(tok, !(isPackageExplicit(tok)));
-                tail = tail->next;
-            }
-        }
-        tok = strtok(NULL, "\n");
-    } while (tok != NULL);
-    free(optDeps);
     return head;
 }
 
@@ -123,67 +139,6 @@ bool isOutdated(char *pkg)
     }
     return TRUE;
 }
-
-// void getPackageDependencies(char *pkg, Package *pkgListHead)
-// {
-//     char cmd[100] = PHSI;
-//     strcat(cmd, pkg);
-//     char output[2000] = "";
-//     char moreOutput[1000] = "";
-//     FILE *p;
-//     p = popen(cmd, "r");
-//     char *ifFound = NULL;
-//     while (fgets(output, 2000, p) != NULL)
-//     {
-//         ifFound = strstr(output, "Depends On");
-//         if (ifFound != NULL)
-//         {
-//             while(fgets(moreOutput, 1000, "Optional Deps") == NULL){
-//                 strcat(output, moreOutput);
-//             }
-//             ifFound = strstr(output, ":") + 1;
-//             while (*ifFound == ' ')
-//             {
-//                 ifFound = ifFound + 1;
-//             }
-//             break;
-//         }
-//     }
-//     if (strcmp(ifFound, "None\n") != 0)
-//     {
-//         char *tok = trimString(strtok(ifFound, " "));
-//         do
-//         {
-//             if (isValidPackage(tok))
-//             {
-//                 Package *link = NULL;
-//                 link = (Package *)malloc(sizeof(Package));
-//                 strcpy(link->pkg, tok);
-//                 if (isPackageInstalled(tok))
-//                 {
-//                     if (isPackageExplicit(tok))
-//                     {
-//                         link->asdep = FALSE;
-//                     }
-//                     else
-//                     {
-//                         link->asdep = TRUE;
-//                     }
-//                 }
-//                 else
-//                 {
-//                     link->asdep = FALSE;
-//                 }
-//                 link->next = NULL;
-//                 pkgListHead->next = link;
-//             }
-//             tok = strtok(NULL, " ");
-//             if(tok != NULL){
-//                 tok = trimString(tok);
-//             }
-//         } while (tok != NULL);
-//     }
-// }
 
 bool isPackageExplicit(char *pkg)
 {
@@ -253,9 +208,10 @@ char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, cha
     char cmd[strlen(ph) + strlen(pkg) + strlen(GREP) + strlen(patternQ) + strlen(redirect) + TB];
     strcpy(cmd, ph);
     strcat(cmd, pkg);
+    strcat(cmd, redirect);
     strcat(cmd, GREP);
     strcat(cmd, patternQ);
-    strcat(cmd, redirect);
+
     // char *cmdd = cmd;
     char concated[BUFFERSIZE] = "";
     char tmp[BUFFERSIZE] = "";
@@ -277,7 +233,11 @@ char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, cha
         return NULL;
     }
     char *colLoc = strstr(concated, ":") + 1;
-    memmove(concated, colLoc, strlen(colLoc));
+    memmove(concated, colLoc, strlen(colLoc) + 1);
+    if (strstr(concated, " None\n") != NULL)
+    {
+        return NULL;
+    }
     char *output = (char *)malloc(strlen(concated) + 1);
     strcpy(output, concated);
     return output;
