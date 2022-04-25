@@ -11,45 +11,35 @@
 #define PHQ "yay -Q "
 #define PHSY "yay -Sy "
 
-#define GREP " | grep -A 100 --no-group-separator "
-
 // Defined Pacman Output
 #define NAME "Name"
 #define VER "Version"
 #define DEPSON "Depends On"
-#define DEPSONQ "\"Depends On\""
 #define OPTDEPS "Optional Deps"
-#define OPTDEPSQ "\"Optional Deps\""
 #define REQBY "Required By"
-#define REQBYQ "\"Required By\""
 #define OPTFOR "Optional For"
-#define OPTFORQ "\"Optional For\""
-#define INSTALLREASON "Install Reason"
-#define INSTALLREASONQ "\"Install Reason\""
-#define INSTALLSCRIPT "Install Script"
 #define CONFLICTSWITH "Conflicts With"
-
-const int TB = 10;
 
 typedef struct Package
 {
    char *pkg;  // package name
-   bool asdep; // As dependency
+   bool isExplicit;
    struct Package *next;
 } Package;
 
-Package *createPackage(char *pkg, bool asdep);
-void destroyPackage(Package *pak);
-char *getCorrectPackageName(char *pkg);
-Package *getDependsOn(char *pkg);
-Package *getOptionalDepsInstalled(char *pkg);
-Package *getRequiredBy(char *pkg);
-Package *getOptionalFor(char *pkg);
-void getPackageDependencies(char *pkg, Package *pkgListHead);
+extern Package *headList;
+extern int Explicit;
+extern int Depends;
+
+void initilizeAll();
+bool isExplicit(char *pkg);
 bool isOutdated(char *pkg);
-bool isPackageExplicit(char *pkg);
 bool isPackageInstalled(char *pkg);
-bool isValidPackage(char *str);
-char *pacmanOutputHelper(char *ph, char *pkg, char *patternQ, char *pattern, char *pttrnExclude);
+bool isInDatabase(char *pkg);
 char *trimString(char *str);
-void updateDatabase();
+void syncDatabase();
+void updateDependencyPackages(char *pkg);
+bool isValidPackage(char *str);
+Package *createPackage(char *pkg, bool isExplicit);
+
+

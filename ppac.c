@@ -5,37 +5,6 @@
 
 #include "Utils.h"
 
-void addUniquePackages(Package *head, Package *newPkgList)
-{
-   if(newPkgList == NULL){
-      return;
-   }
-   Package *curNewPkg = newPkgList;
-   Package *newNext = newPkgList->next;
-   while (curNewPkg != NULL)
-   {
-      Package *pointer = head;
-      Package *prevPointer = NULL;
-      while (pointer != NULL && strcmp(pointer->pkg, curNewPkg->pkg) != 0)
-      {
-         prevPointer = pointer;
-         pointer = pointer->next;
-      }
-      if (pointer == NULL)
-      {
-         prevPointer->next = curNewPkg;
-      }
-      curNewPkg->next = NULL;
-      if(pointer != NULL){
-         destroyPackage(curNewPkg);
-      }
-      curNewPkg = newNext;
-      if(curNewPkg != NULL){
-         newNext = curNewPkg->next;
-      }
-   }
-}
-
 int main(int argc, char *argv[])
 {
    if (argc != 2)
@@ -44,63 +13,76 @@ int main(int argc, char *argv[])
       return 1;
    }
    // signal(SIGPIPE, SIG_IGN);
-   printf("Syncing database.\n");
-   updateDatabase();
-   char *pkg = argv[1];
+   //syncDatabase();
+   initilizeAll();
+   char *pkg = (char *)malloc(strlen(argv[1]));
+   strcpy(pkg, argv[1]);
    printf("Checking package.\n");
-   if (isPackageInstalled(pkg) && isOutdated(pkg) == FALSE)
-   {
-      printf("\n%s is already installed and up-to-date.\nDoing nothing.\n\n", pkg);
-      return 1;
+   // if (isPackageInstalled(pkg) && !isOutdated(pkg))
+   // {
+   //    printf("\n%s is already installed and up-to-date.\nDoing nothing.\n\n", pkg);
+   //    return 1;
+   // }
+
+   headList = createPackage(pkg, isExplicit(trimString(pkg)));
+   if(headList->isExplicit){
+      Explicit = Explicit + strlen(headList->pkg);
    }
+   else{
+      Depends = Depends + strlen(headList->pkg);
+   }
+   Package *whereAmI = headList;
 
-   Package *head = createPackage(pkg, !(isPackageExplicit(trimString(pkg))));
-   Package *whereAmI = head;
-
-   Package *tempPkgList = NULL;
-   int asDepsSize = 0;
-   int notAsDepsSize = 0;
-   while (whereAmI != NULL)
-   {
-      if(strcmp(whereAmI->pkg, "tzdata") == 0){
-         printf("Hi\n");
-      }
-      printf("%s\n", whereAmI->pkg);
-      tempPkgList = getDependsOn(whereAmI->pkg);
-      addUniquePackages(head, tempPkgList);
-      tempPkgList = getOptionalDepsInstalled(whereAmI->pkg);
-      addUniquePackages(head, tempPkgList);
-      tempPkgList = getRequiredBy(whereAmI->pkg);
-      addUniquePackages(head, tempPkgList);
-      tempPkgList = getOptionalFor(whereAmI->pkg);
-      addUniquePackages(head, tempPkgList);
-      if(whereAmI->asdep){
-         asDepsSize = asDepsSize + strlen(whereAmI->pkg);
-      }
-      else{
-         notAsDepsSize = notAsDepsSize + strlen(whereAmI->pkg);
-      }
+   while(whereAmI != NULL){
+      updateDependencyPackages(whereAmI->pkg);
       whereAmI = whereAmI->next;
    }
 
+   // Package *tempPkgList = NULL;
+   // int asDepsSize = 0;
+   // int notAsDepsSize = 0;
+   // while (whereAmI != NULL)
+   // {
+   //    if(strcmp(whereAmI->pkg, "tzdata") == 0){
+   //       printf("Hi\n");
+   //    }
+   //    printf("%s\n", whereAmI->pkg);
+   //    tempPkgList = getDependsOn(whereAmI->pkg);
+   //    addUniquePackages(head, tempPkgList);
+   //    tempPkgList = getOptionalDepsInstalled(whereAmI->pkg);
+   //    addUniquePackages(head, tempPkgList);
+   //    tempPkgList = getRequiredBy(whereAmI->pkg);
+   //    addUniquePackages(head, tempPkgList);
+   //    tempPkgList = getOptionalFor(whereAmI->pkg);
+   //    addUniquePackages(head, tempPkgList);
+   //    if(whereAmI->asdep){
+   //       asDepsSize = asDepsSize + strlen(whereAmI->pkg);
+   //    }
+   //    else{
+   //       notAsDepsSize = notAsDepsSize + strlen(whereAmI->pkg);
+   //    }
+   //    whereAmI = whereAmI->next;
+   // }
+
    int buff = 1000;
-   asDepsSize = asDepsSize + buff;
-   notAsDepsSize = notAsDepsSize + buff;
+   Depends = Depends + buff;
+   Explicit = Explicit + buff;
 
-   char *adcmd = (char *)malloc(asDepsSize);
-   char *nadcmd = (char *)malloc(notAsDepsSize);
-   strcpy(adcmd, "");
-   strcpy(nadcmd, "");
+   char *pDepends = (char *)malloc(Depends);
+   char *pExplicit = (char *)malloc(Explicit);
+   pDepends[0] = '\0';
+   pExplicit[0] = '\0';
 
-   whereAmI = head;
+   whereAmI = headList;
    while (whereAmI != NULL)
    {
-      if(whereAmI->asdep){
-         strcat(adcmd, whereAmI->pkg);
+      if(!whereAmI->isExplicit){
+         strcat(pDepends, whereAmI->pkg);
       }
       else{
-         strcat(nadcmd, whereAmI->pkg);
+         strcat(pExplicit, whereAmI->pkg);
       }
+      whereAmI = whereAmI->next;
    }
    
 
