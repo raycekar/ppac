@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
+// #include <signal.h>
 
 #include "Utils.h"
 
@@ -13,23 +13,33 @@ int main(int argc, char *argv[])
       return 1;
    }
    // signal(SIGPIPE, SIG_IGN);
-   //syncDatabase();
+   printf("Initilizing...\n");
+   syncDatabase();
    initilizeAll();
    char *pkg = (char *)malloc(strlen(argv[1]));
    strcpy(pkg, argv[1]);
-   printf("Checking package.\n");
-   // if (isPackageInstalled(pkg) && !isOutdated(pkg))
-   // {
-   //    printf("\n%s is already installed and up-to-date.\nDoing nothing.\n\n", pkg);
-   //    return 1;
-   // }
+   printf("Checking package...\n");
+   if(!isInDatabase(pkg)){
+      printf("%s was not found to be a valid package.\nDoing Nothing.\n", pkg);
+      return 1;
+   }
+   if (isPackageInstalled(pkg) && !isOutdated(pkg))
+   {
+      printf("\n%s is already installed and up-to-date.\nDoing nothing.\n\n", pkg);
+      return 1;
+   }
 
-   headList = createPackage(pkg, isExplicit(trimString(pkg)));
+   bool explicitPkg = TRUE;
+   if(isPackageInstalled(pkg)){
+      explicitPkg = isExplicit(trimString(pkg));
+   }
+
+   headList = createPackage(pkg, explicitPkg);
    if(headList->isExplicit){
-      Explicit = Explicit + strlen(headList->pkg);
+      explicitWordLen = explicitWordLen + strlen(headList->pkg);
    }
    else{
-      Depends = Depends + strlen(headList->pkg);
+      dependsWordLen = dependsWordLen + strlen(headList->pkg);
    }
    Package *whereAmI = headList;
 
@@ -38,38 +48,8 @@ int main(int argc, char *argv[])
       whereAmI = whereAmI->next;
    }
 
-   // Package *tempPkgList = NULL;
-   // int asDepsSize = 0;
-   // int notAsDepsSize = 0;
-   // while (whereAmI != NULL)
-   // {
-   //    if(strcmp(whereAmI->pkg, "tzdata") == 0){
-   //       printf("Hi\n");
-   //    }
-   //    printf("%s\n", whereAmI->pkg);
-   //    tempPkgList = getDependsOn(whereAmI->pkg);
-   //    addUniquePackages(head, tempPkgList);
-   //    tempPkgList = getOptionalDepsInstalled(whereAmI->pkg);
-   //    addUniquePackages(head, tempPkgList);
-   //    tempPkgList = getRequiredBy(whereAmI->pkg);
-   //    addUniquePackages(head, tempPkgList);
-   //    tempPkgList = getOptionalFor(whereAmI->pkg);
-   //    addUniquePackages(head, tempPkgList);
-   //    if(whereAmI->asdep){
-   //       asDepsSize = asDepsSize + strlen(whereAmI->pkg);
-   //    }
-   //    else{
-   //       notAsDepsSize = notAsDepsSize + strlen(whereAmI->pkg);
-   //    }
-   //    whereAmI = whereAmI->next;
-   // }
-
-   int buff = 1000;
-   Depends = Depends + buff;
-   Explicit = Explicit + buff;
-
-   char *pDepends = (char *)malloc(Depends);
-   char *pExplicit = (char *)malloc(Explicit);
+   char *pDepends = (char *)malloc(dependsWordLen + dependsWordCt);
+   char *pExplicit = (char *)malloc(explicitWordLen + explicitWordCt);
    pDepends[0] = '\0';
    pExplicit[0] = '\0';
 
@@ -78,13 +58,63 @@ int main(int argc, char *argv[])
    {
       if(!whereAmI->isExplicit){
          strcat(pDepends, whereAmI->pkg);
+         strcat(pDepends, " ");
       }
       else{
          strcat(pExplicit, whereAmI->pkg);
+         strcat(pExplicit, " ");
       }
       whereAmI = whereAmI->next;
    }
    
+   printf("\nThe following dependencies will be updated:\n%s\n", pDepends);
+   printf("\nThe following packages will be updated/installed:\n%s\n\n", pExplicit);
 
+   char response;
+   bool goAhead = FALSE;
+   while(TRUE){
+      printf("Proceed with installation? [Y/n]\n");
+      response = getchar();
+      if(response == 110 || response == 78){
+         break;
+      }
+      if(response == 121 || response == 89 || response == 10){
+         goAhead = TRUE;
+         break;
+      }
+      printf("\nInvalid response.\n");
+   }
+
+   if(goAhead){
+      unsigned int size;
+      if(strlen(pDepends) > strlen(pExplicit)){
+         size = strlen(pDepends);
+      }
+      else{
+         size = strlen(pExplicit);
+      }
+
+      char *cmd = (char *)malloc(size + 100);
+      if(strlen(pDepends) != 0){
+         cmd[0] = '\0';
+         strcat(cmd, PHS);
+         strcat(cmd, "--asdeps --needed --noconfirm ");
+         strcat(cmd, pDepends);
+         system(cmd);
+      }
+      
+      if(strlen(pExplicit) != 0){
+         cmd[0] = '\0';
+         strcat(cmd, PHS);
+         strcat(cmd, "--needed --noconfirm ");
+         strcat(cmd, pExplicit);
+         system(cmd);
+      }
+
+      free(cmd);
+   }
+
+   free(pDepends);
+   free(pExplicit);
    return 0;
 }

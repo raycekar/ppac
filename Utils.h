@@ -10,6 +10,7 @@
 #define PHQI "yay -Qi "
 #define PHQ "yay -Q "
 #define PHSY "yay -Sy "
+#define PHS "yay -S "
 
 // Defined Pacman Output
 #define NAME "Name"
@@ -28,8 +29,10 @@ typedef struct Package
 } Package;
 
 extern Package *headList;
-extern int Explicit;
-extern int Depends;
+extern unsigned int explicitWordLen;
+extern unsigned int dependsWordLen;
+extern unsigned int explicitWordCt;
+extern unsigned int dependsWordCt;
 
 void initilizeAll();
 bool isExplicit(char *pkg);

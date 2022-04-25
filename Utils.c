@@ -5,8 +5,10 @@
 #include "Utils.h"
 
 Package *headList = NULL;
-int Explicit = 0;
-int Depends = 0;
+unsigned int explicitWordLen = 0;
+unsigned int dependsWordLen = 0;
+unsigned int explicitWordCt = 0;
+unsigned int dependsWordCt = 0;
 
 char *installedPackageList;
 char *outOfDatePackageList;
@@ -33,14 +35,15 @@ void addPackageToList(Package *pkg){
     if(strcmp(pointer->pkg, pkg->pkg) != 0){
         pointer->next = pkg;
         if(pkg->isExplicit){
-            Explicit = Explicit + strlen(pkg->pkg);
+            explicitWordLen = explicitWordLen + strlen(pkg->pkg);
+            explicitWordCt = explicitWordCt + 1;
         }
         else{
-            Depends = Depends + strlen(pkg->pkg);
+            dependsWordLen = dependsWordLen + strlen(pkg->pkg);
+            dependsWordCt = dependsWordCt + 1;
         }
         return;
     }
-    printf("%s already in headlist.\n", pkg->pkg);
     destroyPackage(pkg);
 }
 
@@ -255,15 +258,23 @@ void updateDependencyPackages(char *pkg)
         "Required By", "Optional For",
         "Optional For", "Conflicts With"
     };
+        bool cutItShort = FALSE;
+    if(strstr(pkgInfo, "Repository") == pkgInfo){
+        cutItShort = TRUE;
+        strcpy(breakpoints[3], breakpoints[7]);
+    }
     char *psave1 = NULL, *psave2 = NULL;
     char *tok1 = strtok_r(pkgInfo, "\n", &psave1);
     char *tok2 = NULL;
     char *buf = (char *)malloc(BUFFERSIZE);
     char *colLoc = NULL;
-    char depPak[500] = "";
+    char depPak[BUFFERSIZE] = "";
     buf[0] = '\0';
-    while (pbp < (sizeof(breakpoints)/sizeof(breakpoints[0])))
+    while (pbp < 8)
     {
+        if(cutItShort && pbp > 3){
+            break;
+        }
         if (strstr(tok1, breakpoints[pbp]) == tok1)
         {
             colLoc = strstr(tok1, ":");
@@ -341,13 +352,18 @@ void updateDependencyPackages(char *pkg)
     }
     free(buf);
     free(pkgInfo);
-    printf("Im done.\n");
 }
 
 char *phQueryInfo(char *pkg)
 {
-    char cmd[strlen(PHQI) + strlen(pkg) + 1];
-    strcpy(cmd, PHQI);
+    char cmd[BUFFERSIZE];
+    if(isPackageInstalled(pkg)){
+        strcpy(cmd, PHQI);
+    }
+    else{
+        strcpy(cmd, PHSI);
+    }
+    
     strcat(cmd, pkg);
 
     char *concated;
