@@ -13,4 +13,4 @@ ppac will be used for updating and/or installing new packages and it's dependenc
 4) you can now either leave and use it in this location or move it to /usr/bin directory
 
 # Usage
-ppac <package name>
+ppac \<package name\>
