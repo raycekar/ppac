@@ -7,6 +7,8 @@ ppac will be used for updating and/or installing new packages and it's dependenc
 
 # Installation (may post to the AUR):
 
+You will need gcc for compiling and at this time, you will need yay.
+
 1) git clone https://github.com/raycekar/ppac.git
 2) cd ppac
 3) gcc -g \*.c -o ppac
