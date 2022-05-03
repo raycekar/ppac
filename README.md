@@ -19,4 +19,4 @@ ppac \<package name\>
 
 # Configuration
 
-ppac will default to using pacman, but you could change it to yay (currently unsure if paru will work atm) by creating a config file /etc/ppac/ppac.conf and pasting line "PKGHELPER=yay".
+ppac will default to using pacman, but you could change it to yay (currently unsure if paru will work atm) by creating a config file ~/.config/ppac/ppac.conf and pasting line "PKGHELPER=yay".

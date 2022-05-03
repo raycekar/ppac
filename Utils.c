@@ -459,7 +459,13 @@ void configurationSetup(){
     PHQUQ = (char *)malloc(20); 
     PHQUQ[0] = '\0';
 
-    char path[] = "/etc/ppac/ppac.conf";
+    FILE *p;
+    p = popen("echo ~", "r");
+    char path[BUFFERSIZE] = "";
+    fgets(path, BUFFERSIZE, p);
+    trimString(path);
+    pclose(p);
+    strcat(path, "/.config/ppac/ppac.conf");
     FILE *conf = fopen(path, "r");
     if(conf == NULL){
         strcpy(PH, "pacman");
@@ -484,6 +490,7 @@ void configurationSetup(){
             }
             pBuf = fgets(buf, BUFFERSIZE, conf);
         }
+        fclose(conf);
     }
     strcpy(PHSI, PH);
     strcat(PHSI, " -Si ");
@@ -505,5 +512,4 @@ void configurationSetup(){
     strcat(PHQQ, " -Qq ");
     strcpy(PHQUQ, PH);
     strcat(PHQUQ, " -Quq ");
-    fclose(conf);
 }
