@@ -4,22 +4,18 @@
 #define FALSE 0
 #define BUFFERSIZE 5000
 
-// Package Helper
-#define PHSI "yay -Si "
-#define PHSL "yay -Sl "
-#define PHQI "yay -Qi "
-#define PHQ "yay -Q "
-#define PHSY "yay -Sy "
-#define PHS "yay -S "
-
-// Defined Pacman Output
-#define NAME "Name"
-#define VER "Version"
-#define DEPSON "Depends On"
-#define OPTDEPS "Optional Deps"
-#define REQBY "Required By"
-#define OPTFOR "Optional For"
-#define CONFLICTSWITH "Conflicts With"
+// Package Helper (PH)
+extern char *PH;
+extern char *PHSI;
+extern char *PHSL; 
+extern char *PHSLQ;
+extern char *PHQEQ;
+extern char *PHQQ;
+extern char *PHQUQ;
+extern char *PHQI; 
+extern char *PHQ; 
+extern char *PHSY; 
+extern char *PHS; 
 
 typedef struct Package
 {
@@ -44,5 +40,6 @@ void syncDatabase();
 void updateDependencyPackages(char *pkg);
 bool isValidPackage(char *str);
 Package *createPackage(char *pkg, bool isExplicit);
+void configurationSetup();
 
 

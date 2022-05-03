@@ -7,7 +7,7 @@ ppac will be used for updating and/or installing new packages and it's dependenc
 
 # Installation (may post to the AUR):
 
-You will need gcc for compiling and at this time, you will need yay.
+You will need gcc for compiling.
 
 1) git clone https://github.com/raycekar/ppac.git
 2) cd ppac
@@ -16,3 +16,7 @@ You will need gcc for compiling and at this time, you will need yay.
 
 # Usage
 ppac \<package name\>
+
+# Configuration
+
+ppac will default to using pacman, but you could change it to yay (currently unsure if paru will work atm) by creating a config file /etc/ppac/ppac.conf and pasting line "PKGHELPER=yay".

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <signal.h>
 
 #include "Utils.h"
 
@@ -12,8 +11,8 @@ int main(int argc, char *argv[])
       printf("Error: ppac only accepts one agument.\n");
       return 1;
    }
-   // signal(SIGPIPE, SIG_IGN);
    printf("Initilizing...\n");
+   configurationSetup();
    syncDatabase();
    initilizeAll();
    char *pkg = (char *)malloc(strlen(argv[1]));
@@ -73,7 +72,7 @@ int main(int argc, char *argv[])
    char response;
    bool goAhead = FALSE;
    while(TRUE){
-      printf("Proceed with installation? [Y/n]\n");
+      printf("Proceed with installation? [Y/n]");
       response = getchar();
       if(response == 110 || response == 78){
          break;

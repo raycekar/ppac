@@ -10,6 +10,18 @@ unsigned int dependsWordLen = 0;
 unsigned int explicitWordCt = 0;
 unsigned int dependsWordCt = 0;
 
+char *PH = NULL;
+char *PHSI = NULL;
+char *PHSL = NULL;
+char *PHSLQ = NULL;
+char *PHQEQ = NULL;
+char *PHQQ = NULL;
+char *PHQUQ = NULL;
+char *PHQI = NULL;
+char *PHQ = NULL;
+char *PHSY = NULL;
+char *PHS = NULL;
+
 char *installedPackageList;
 char *outOfDatePackageList;
 char *allAvailablePackageList;
@@ -78,7 +90,7 @@ void genearateAllPackageList()
         allAvailablePackageList = (char *)malloc(BUFFERSIZE);
         allAvailablePackageList[0] = '\0';
     }
-    allAvailablePackageList = generateHelper("yay -Slq", allAvailablePackageList);
+    allAvailablePackageList = generateHelper(PHSLQ, allAvailablePackageList);
 }
 
 void generateExplicitList()
@@ -88,7 +100,7 @@ void generateExplicitList()
         explicitPackageList = (char *)malloc(BUFFERSIZE);
         explicitPackageList[0] = '\0';
     }
-    explicitPackageList = generateHelper("yay -Qeq", explicitPackageList);
+    explicitPackageList = generateHelper(PHQEQ, explicitPackageList);
 }
 
 void generateInstalledList()
@@ -98,7 +110,7 @@ void generateInstalledList()
         installedPackageList = (char *)malloc(BUFFERSIZE);
         installedPackageList[0] = '\0';
     }
-    installedPackageList = generateHelper("yay -Qq", installedPackageList);
+    installedPackageList = generateHelper(PHQQ, installedPackageList);
 }
 
 void generateOutdatedList()
@@ -108,7 +120,7 @@ void generateOutdatedList()
         outOfDatePackageList = (char *)malloc(BUFFERSIZE);
         outOfDatePackageList[0] = '\0';
     }
-    outOfDatePackageList = generateHelper("yay -Quq", outOfDatePackageList);
+    outOfDatePackageList = generateHelper(PHQUQ, outOfDatePackageList);
 }
 
 char *generateHelper(char *cmd, char *storedLocation)
@@ -137,7 +149,8 @@ char *generateHelper(char *cmd, char *storedLocation)
 
 char *getCorrectName(char *pkg)
 {
-    char cmd[BUFFERSIZE] = "yay -Qq ";
+    char cmd[BUFFERSIZE] = "";
+    strcpy(cmd, PHQQ);
     strcat(cmd, pkg);
     FILE *p;
     p = popen(cmd, "r");
@@ -259,7 +272,7 @@ void updateDependencyPackages(char *pkg)
         "Optional For", "Conflicts With"
     };
         bool cutItShort = FALSE;
-    if(strstr(pkgInfo, "Repository") == pkgInfo){
+    if(strstr(pkgInfo, "#REPO#") == pkgInfo){
         cutItShort = TRUE;
         strcpy(breakpoints[3], breakpoints[7]);
     }
@@ -357,18 +370,19 @@ void updateDependencyPackages(char *pkg)
 char *phQueryInfo(char *pkg)
 {
     char cmd[BUFFERSIZE];
+    char *concated;
+    concated = (char *)malloc(BUFFERSIZE);
+
     if(isPackageInstalled(pkg)){
         strcpy(cmd, PHQI);
+        strcpy(concated, "#LOCAL#");
     }
     else{
         strcpy(cmd, PHSI);
+        strcpy(concated, "#REPO#");
     }
     
     strcat(cmd, pkg);
-
-    char *concated;
-    concated = (char *)malloc(BUFFERSIZE);
-    strcpy(concated, "");
     int conSize = BUFFERSIZE;
     char tmp[BUFFERSIZE] = "";
     FILE *p;
@@ -419,4 +433,77 @@ bool isValidPackage(char *str)
         lttrPass = FALSE;
     }
     return TRUE;
+}
+
+void configurationSetup(){
+    PH = (char *)malloc(10);
+    PH[0] = '\0';
+    PHSI = (char *)malloc(20);
+    PHSI[0] = '\0';
+    PHSLQ = (char *)malloc(20);
+    PHSLQ[0] = '\0';
+    PHSL = (char *)malloc(20);
+    PHSL[0] = '\0';
+    PHQI = (char *)malloc(20);
+    PHQI[0] = '\0';
+    PHQ = (char *)malloc(20); 
+    PHQ[0] = '\0';
+    PHSY = (char *)malloc(20);
+    PHSY[0] = '\0';
+    PHS = (char *)malloc(20); 
+    PHS[0] = '\0';
+    PHQEQ = (char *)malloc(20); 
+    PHQEQ[0] = '\0';
+    PHQQ = (char *)malloc(20); 
+    PHQQ[0] = '\0';
+    PHQUQ = (char *)malloc(20); 
+    PHQUQ[0] = '\0';
+
+    char path[] = "/etc/ppac/ppac.conf";
+    FILE *conf = fopen(path, "r");
+    if(conf == NULL){
+        strcpy(PH, "pacman");
+    }
+    else{
+        char *buf = (char *)malloc(BUFFERSIZE);
+        char *pBuf = fgets(buf, BUFFERSIZE, conf);
+        char key[20] = "";
+        char value[20] = "";
+        
+        while(pBuf != NULL){
+            char *eloc = strstr(buf, "=");
+            if(eloc != NULL){
+                strcpy(value,eloc + 1);
+                eloc[0] = '\0';
+                strcpy(key, buf);
+                trimString(key);
+                trimString(value);
+                if(strcmp(key, "PKGHELPER") == 0){
+                    strcpy(PH, value);
+                }
+            }
+            pBuf = fgets(buf, BUFFERSIZE, conf);
+        }
+    }
+    strcpy(PHSI, PH);
+    strcat(PHSI, " -Si ");
+    strcpy(PHSLQ, PH);
+    strcat(PHSLQ, " -Slq ");
+    strcpy(PHSL, PH);
+    strcat(PHSL, " -Sl ");
+    strcpy(PHQI, PH);
+    strcat(PHQI, " -Qi ");
+    strcpy(PHQ, PH);
+    strcat(PHQ, " -Q ");
+    strcpy(PHSY, PH);
+    strcat(PHSY, " -Sy ");
+    strcpy(PHS, PH);
+    strcat(PHS, " -S ");
+    strcpy(PHQEQ, PH);
+    strcat(PHQEQ, " -Qeq ");
+    strcpy(PHQQ, PH);
+    strcat(PHQQ, " -Qq ");
+    strcpy(PHQUQ, PH);
+    strcat(PHQUQ, " -Quq ");
+    fclose(conf);
 }
