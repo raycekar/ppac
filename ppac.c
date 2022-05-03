@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
       whereAmI = whereAmI->next;
    }
 
-   char *pDepends = (char *)malloc(dependsWordLen + dependsWordCt);
-   char *pExplicit = (char *)malloc(explicitWordLen + explicitWordCt);
+   char *pDepends = (char *)malloc(dependsWordLen + dependsWordCt + 1);
+   char *pExplicit = (char *)malloc(explicitWordLen + explicitWordCt + 1);
    pDepends[0] = '\0';
    pExplicit[0] = '\0';
 

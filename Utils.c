@@ -490,6 +490,7 @@ void configurationSetup(){
             }
             pBuf = fgets(buf, BUFFERSIZE, conf);
         }
+        free(buf);
         fclose(conf);
     }
     strcpy(PHSI, PH);
