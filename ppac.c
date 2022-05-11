@@ -6,13 +6,17 @@
 
 int main(int argc, char *argv[])
 {
-   if (argc != 2)
+   configurationSetup();
+   if (argc == 1){
+      fullUpgrade();
+      return 0;
+   }
+   if (argc > 2)
    {
       printf("Error: ppac only accepts one agument.\n");
       return 1;
    }
    printf("Initilizing...\n");
-   configurationSetup();
    syncDatabase();
    initilizeAll();
    char *pkg = (char *)malloc(strlen(argv[1]));

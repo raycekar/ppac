@@ -21,6 +21,7 @@ char *PHQI = NULL;
 char *PHQ = NULL;
 char *PHSY = NULL;
 char *PHS = NULL;
+char *PHSYU = NULL;
 
 char *installedPackageList;
 char *outOfDatePackageList;
@@ -261,6 +262,11 @@ void syncDatabase()
     system(PHSY);
 }
 
+void fullUpgrade()
+{
+    system(PHSYU);
+}
+
 void updateDependencyPackages(char *pkg)
 {
     char *pkgInfo = phQueryInfo(pkg);
@@ -458,6 +464,8 @@ void configurationSetup(){
     PHQQ[0] = '\0';
     PHQUQ = (char *)malloc(20); 
     PHQUQ[0] = '\0';
+    PHSYU = (char *)malloc(20); 
+    PHSYU[0] = '\0';
 
     FILE *p;
     p = popen("echo ~", "r");
@@ -513,4 +521,6 @@ void configurationSetup(){
     strcat(PHQQ, " -Qq ");
     strcpy(PHQUQ, PH);
     strcat(PHQUQ, " -Quq ");
+    strcpy(PHSYU, PH);
+    strcat(PHSYU, " -Syu ");
 }

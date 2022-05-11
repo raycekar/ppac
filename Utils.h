@@ -15,7 +15,8 @@ extern char *PHQUQ;
 extern char *PHQI; 
 extern char *PHQ; 
 extern char *PHSY; 
-extern char *PHS; 
+extern char *PHS;
+extern char *PHSYU; 
 
 typedef struct Package
 {
@@ -41,5 +42,6 @@ void updateDependencyPackages(char *pkg);
 bool isValidPackage(char *str);
 Package *createPackage(char *pkg, bool isExplicit);
 void configurationSetup();
+void fullUpgrade();
 
 
